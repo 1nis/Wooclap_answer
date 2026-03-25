@@ -47,14 +47,14 @@ def get_token_via_sso(username, password, event_code):
             page.fill("input[type='password']", password)
             page.press("input[type='password']", "Enter")
 
-            # 3. Attendre le retour sur Wooclap après redirection SSO
+            # 3. Attendre le retour sur Wooclap (n'importe quelle page)
             print("  ⏳ Attente de la redirection SSO...")
-            page.wait_for_url("*app.wooclap.com/auth/profile*", timeout=30000)
-            page.wait_for_load_state("networkidle")
+            page.wait_for_url("*app.wooclap.com*", timeout=30000)
+            page.wait_for_timeout(2000)  # laisser le temps aux redirects de se poser
 
-            # 4. Naviguer vers l'event pour s'assurer que le token est correct
+            # 4. Naviguer directement vers l'event (ignore l'onboarding)
             print(f"  🔄 Navigation vers /{event_code}...")
-            page.goto(f"{BASE_URL}/{event_code}", wait_until="networkidle")
+            page.goto(f"{BASE_URL}/{event_code}", wait_until="load")
             page.wait_for_load_state("networkidle")
 
             # 5. Extraire le token depuis localStorage
