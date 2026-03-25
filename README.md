@@ -51,6 +51,7 @@ Identifiant AMU : prenom.nom@etu.univ-amu.fr
 Mot de passe    : ********
   🌐 Ouverture de la page SSO...
   ✅ TOKEN récupéré
+  🔄 Navigation vers /BHJLED...
 
 📝 Mise à jour des scripts...
   ✅ quizz_wooclap.py mis à jour
@@ -159,6 +160,7 @@ python quizz_wooclap.py
 |---|---|---|
 | HTTP 401 | Token expiré | Relancer `get_credentials.py` |
 | HTTP 404 | Mauvais EVENT_ID | Relancer `get_credentials.py` |
+| Redirection vers `/auth/profile` | Comportement SSO par défaut | Résolu automatiquement — le script navigue vers l'event après login |
 | `⏸️ Question fermée` | Question déjà terminée | Normal, le bot attend la suivante |
 | Timeout réseau | Wifi instable | Le bot retry automatiquement 3 fois |
 | Timeout SSO | Page login lente | Relancer `get_credentials.py` |

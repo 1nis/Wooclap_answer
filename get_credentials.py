@@ -29,7 +29,7 @@ def get_event_id(event_code):
 # ─────────────────────────────────────────────
 # TOKEN — SSO Université d'Aix-Marseille
 # ─────────────────────────────────────────────
-def get_token_via_sso(username, password):
+def get_token_via_sso(username, password, event_code):
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=False)
         context = browser.new_context()
@@ -52,7 +52,12 @@ def get_token_via_sso(username, password):
             page.wait_for_url("*app.wooclap.com*", timeout=30000)
             page.wait_for_load_state("networkidle")
 
-            # 4. Extraire le token depuis localStorage
+            # 4. Naviguer vers l'event pour s'assurer que le token est correct
+            print(f"  🔄 Navigation vers /{event_code}...")
+            page.goto(f"{BASE_URL}/{event_code}", wait_until="networkidle")
+            page.wait_for_load_state("networkidle")
+
+            # 5. Extraire le token depuis localStorage
             token = page.evaluate("localStorage.getItem('token')")
 
             if not token:
@@ -127,7 +132,7 @@ def main():
     username = input("Identifiant AMU : ").strip()
     password = getpass.getpass("Mot de passe    : ")
 
-    token = get_token_via_sso(username, password)
+    token = get_token_via_sso(username, password, event_code)
     if not token:
         print("\n❌ Impossible de récupérer le token.")
         return
