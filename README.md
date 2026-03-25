@@ -1,6 +1,6 @@
 # Wooclap Bot 🤖
 
-Deux scripts Python pour automatiser les réponses sur Wooclap.
+Trois scripts Python pour automatiser les réponses sur Wooclap.
 
 ---
 
@@ -8,6 +8,7 @@ Deux scripts Python pour automatiser les réponses sur Wooclap.
 
 | Fichier | Usage |
 |---|---|
+| `get_credentials.py` | Récupère EVENT_ID et TOKEN via SSO et les injecte dans les scripts |
 | `wooclap_bot.py` | Surveille en temps réel et répond aux questions imposées par le prof |
 | `quizz_wooclap.py` | Répond d'un coup à tous les questionnaires en libre accès |
 
@@ -16,7 +17,7 @@ Deux scripts Python pour automatiser les réponses sur Wooclap.
 ## Installation
 
 ```bash
-# Pour les deux scripts
+# Pour les deux scripts principaux
 pip install requests
 
 # Uniquement pour wooclap_bot.py (fallback IA sur les questions en direct)
@@ -29,46 +30,70 @@ playwright install chromium
 
 ---
 
-## Configuration
+## Démarrage rapide
 
-### `quizz_wooclap.py`
-
-```python
-EVENT_CODE = "ABCDEF"            # dans l'URL : app.wooclap.com/ABCDEF
-EVENT_ID   = "695bcdd4b863..."   # ID interne (voir ci-dessous)
-TOKEN      = "750fd54ac2..."     # token de session (voir ci-dessous)
-```
-
-> Pas de clé API requise — les réponses correctes sont directement exposées par l'API Wooclap pour les questionnaires en accès libre.
-
-### `wooclap_bot.py`
-
-```python
-GEMINI_API_KEY = "ta_clé_ici"       # aistudio.google.com → API Key
-EVENT_CODE     = "ABCDEF"
-TOKEN          = "750fd54ac2..."
-```
-
-### Trouver EVENT_ID et TOKEN
-
-**Option rapide — `get_credentials.py`** (recommandé) :
+### 1. Récupérer les credentials
 
 ```bash
 python get_credentials.py
 ```
 
-Entrez l'event code et vos identifiants AMU. Le script récupère `EVENT_ID` et `TOKEN` automatiquement via SSO.
+```
+🔑 Wooclap Credential Fetcher
 
-**Option manuelle :**
+Event code (ex: BHJLED) : BHJLED
 
-**EVENT_ID** — DevTools → Network → requête `ABCDEF?isParticipant=true` → Response → champ `_id`
+📡 Récupération de l'EVENT_ID...
+  ✅ EVENT_ID : 695bcdd4b863...
 
-**TOKEN** — DevTools → Console → coller :
+🔐 Connexion SSO — Université d'Aix-Marseille
+Identifiant AMU : prenom.nom@etu.univ-amu.fr
+Mot de passe    : ********
+  🌐 Ouverture de la page SSO...
+  ✅ TOKEN récupéré
+
+📝 Mise à jour des scripts...
+  ✅ quizz_wooclap.py mis à jour
+  ✅ wooclap_bot.py mis à jour
+```
+
+`EVENT_CODE`, `EVENT_ID` et `TOKEN` sont injectés automatiquement dans les deux scripts. Rien à copier-coller.
+
+> ⚠️ À relancer à chaque nouvelle session (TOKEN expiré → HTTP 401).
+
+### 2. Lancer le bot voulu
+
+```bash
+python wooclap_bot.py     # questions en direct
+python quizz_wooclap.py   # questionnaires libres
+```
+
+---
+
+## Configuration manuelle (optionnel)
+
+Si `get_credentials.py` ne fonctionne pas, remplir les variables en haut de chaque script :
+
+### `quizz_wooclap.py`
+```python
+EVENT_CODE = "ABCDEF"
+EVENT_ID   = "695bcdd4b863..."
+TOKEN      = "750fd54ac2..."
+```
+
+### `wooclap_bot.py`
+```python
+GEMINI_API_KEY = "ta_clé_ici"   # aistudio.google.com → API Key
+EVENT_CODE     = "ABCDEF"
+TOKEN          = "750fd54ac2..."
+```
+
+**Trouver EVENT_ID manuellement** — DevTools → Network → requête `ABCDEF?isParticipant=true` → Response → champ `_id`
+
+**Trouver TOKEN manuellement** — DevTools → Console :
 ```javascript
 localStorage.getItem("token")
 ```
-
-> ⚠️ Le TOKEN change à chaque nouvelle session. À renouveler si le bot retourne HTTP 401.
 
 ---
 
@@ -120,7 +145,7 @@ python quizz_wooclap.py
 
 ### `quizz_wooclap.py`
 - **Lecture directe uniquement** — Wooclap expose `isCorrect` dans ses données pour les questionnaires libres → réponse instantanée et 100% correcte
-- Si `isCorrect` est absent → question ignorée (cas non rencontré sur les questionnaires en accès libre)
+- Si `isCorrect` est absent → question ignorée
 
 ### `wooclap_bot.py`
 1. **Lecture directe** — si `isCorrect` est visible → réponse instantanée
@@ -128,24 +153,12 @@ python quizz_wooclap.py
 
 ---
 
-## Changer de Wooclap
-
-À chaque nouvel événement, mettre à jour uniquement :
-
-```python
-EVENT_CODE = "NOUVEAUCODE"
-EVENT_ID   = "nouvel_id_interne"
-```
-
-Le TOKEN reste valide tant que la session est active.
-
----
-
 ## Dépannage
 
 | Problème | Cause | Solution |
 |---|---|---|
-| HTTP 401 | Token expiré | Récupérer un nouveau TOKEN |
-| HTTP 404 | Mauvais EVENT_ID | Vérifier l'ID dans la Response DevTools |
+| HTTP 401 | Token expiré | Relancer `get_credentials.py` |
+| HTTP 404 | Mauvais EVENT_ID | Relancer `get_credentials.py` |
 | `⏸️ Question fermée` | Question déjà terminée | Normal, le bot attend la suivante |
 | Timeout réseau | Wifi instable | Le bot retry automatiquement 3 fois |
+| Timeout SSO | Page login lente | Relancer `get_credentials.py` |
