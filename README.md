@@ -16,20 +16,33 @@ Deux scripts Python pour automatiser les réponses sur Wooclap.
 ## Installation
 
 ```bash
-pip install requests google-genai
+# Pour les deux scripts
+pip install requests
+
+# Uniquement pour wooclap_bot.py (fallback IA sur les questions en direct)
+pip install google-genai
 ```
 
 ---
 
 ## Configuration
 
-Les deux scripts partagent les mêmes variables à remplir en haut du fichier :
+### `quizz_wooclap.py`
+
+```python
+EVENT_CODE = "ABCDEF"            # dans l'URL : app.wooclap.com/ABCDEF
+EVENT_ID   = "695bcdd4b863..."   # ID interne (voir ci-dessous)
+TOKEN      = "750fd54ac2..."     # token de session (voir ci-dessous)
+```
+
+> Pas de clé API requise — les réponses correctes sont directement exposées par l'API Wooclap pour les questionnaires en accès libre.
+
+### `wooclap_bot.py`
 
 ```python
 GEMINI_API_KEY = "ta_clé_ici"       # aistudio.google.com → API Key
-EVENT_CODE     = "ABCDEF"            # dans l'URL : app.wooclap.com/ABCDEF
-EVENT_ID       = "695bcdd4b863..."   # ID interne (voir ci-dessous)
-TOKEN          = "750fd54ac2..."     # token de session (voir ci-dessous)
+EVENT_CODE     = "ABCDEF"
+TOKEN          = "750fd54ac2..."
 ```
 
 ### Trouver EVENT_ID et TOKEN
@@ -91,7 +104,12 @@ python quizz_wooclap.py
 
 ## Logique de réponse
 
-1. **Lecture directe** — Wooclap expose `isCorrect` dans ses données → réponse instantanée et 100% correcte
+### `quizz_wooclap.py`
+- **Lecture directe uniquement** — Wooclap expose `isCorrect` dans ses données pour les questionnaires libres → réponse instantanée et 100% correcte
+- Si `isCorrect` est absent → question ignorée (cas non rencontré sur les questionnaires en accès libre)
+
+### `wooclap_bot.py`
+1. **Lecture directe** — si `isCorrect` est visible → réponse instantanée
 2. **Fallback Gemini** — si `isCorrect` est masqué → la question est envoyée à Gemini Flash pour analyse
 
 ---

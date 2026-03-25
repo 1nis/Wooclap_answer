@@ -1,11 +1,9 @@
 import requests
 import time
-from google import genai
 
 # ─────────────────────────────────────────────
 # CONFIG
 # ─────────────────────────────────────────────
-GEMINI_API_KEY = "API_KEY"
 EVENT_CODE     = "EVENT_CODE"
 EVENT_ID       = "EVENT_ID"
 TOKEN          = "TOKEN"
@@ -14,7 +12,6 @@ DELAY          = 1.0  # secondes entre chaque réponse (évite le spam)
 # ─────────────────────────────────────────────
 # INIT
 # ─────────────────────────────────────────────
-client   = genai.Client(api_key=GEMINI_API_KEY)
 BASE_URL = "https://app.wooclap.com/api"
 HEADERS  = {
     "Authorization": f"Bearer {TOKEN}",
@@ -45,22 +42,6 @@ def get_event_data():
 def get_correct_choice_ids(choices):
     """Retourne les IDs corrects si isCorrect est visible."""
     return [c.get("_id") for c in choices if c.get("isCorrect") is True]
-
-
-def pick_best_answer_gemini(question_text, choices):
-    """Fallback Gemini si isCorrect masqué."""
-    choices_str = "\n".join([f"{i+1}. {c.get('choice', '?')}" for i, c in enumerate(choices)])
-    prompt = (
-        f"Question: {question_text}\n\n{choices_str}\n\n"
-        f"Réponds UNIQUEMENT avec le(s) numéro(s) de la/les bonne(s) réponse(s), séparés par des virgules (ex: 1,3). Rien d'autre."
-    )
-    try:
-        response = client.models.generate_content(model="gemini-2.0-flash", contents=prompt)
-        indices = [int(x.strip()) - 1 for x in response.text.strip().split(",")]
-        return [choices[max(0, min(i, len(choices)-1))].get("_id") for i in indices]
-    except Exception as e:
-        print(f"  [erreur Gemini] {e}")
-        return [choices[0].get("_id")]
 
 
 def submit_answer(question_id, choice_ids, qtype="MCQ"):
@@ -136,16 +117,14 @@ def run():
 
             # Trouver la bonne réponse
             correct_ids = get_correct_choice_ids(choices)
-            if correct_ids:
-                labels = [c.get("choice", "?") for c in choices if c.get("_id") in correct_ids]
-                source = "direct"
-            else:
-                correct_ids = pick_best_answer_gemini(qtext, choices)
-                labels = [c.get("choice", "?") for c in choices if c.get("_id") in correct_ids]
-                source = "gemini"
+            if not correct_ids:
+                print(f"   ⚠️  isCorrect non disponible : {qtext[:60]}... — ignoré")
+                total_skipped += 1
+                continue
 
+            labels = [c.get("choice", "?") for c in choices if c.get("_id") in correct_ids]
             print(f"   📋 {qtext[:70]}")
-            print(f"      ✅ [{source}] {', '.join(labels)}")
+            print(f"      ✅ [direct] {', '.join(labels)}")
 
             status = submit_answer(qid, correct_ids, qtype)
             print(f"      📤 HTTP {status}")
