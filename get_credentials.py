@@ -49,7 +49,7 @@ def get_token_via_sso(username, password, event_code):
 
             # 3. Attendre le retour sur Wooclap (n'importe quelle page)
             print("  ⏳ Attente de la redirection SSO...")
-            page.wait_for_url("*app.wooclap.com*", timeout=30000)
+            page.wait_for_url(re.compile(r"app\.wooclap\.com"), timeout=60000)
             page.wait_for_timeout(2000)  # laisser le temps aux redirects de se poser
 
             # 4. Naviguer directement vers l'event (ignore l'onboarding)
