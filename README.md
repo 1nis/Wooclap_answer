@@ -21,6 +21,10 @@ pip install requests
 
 # Uniquement pour wooclap_bot.py (fallback IA sur les questions en direct)
 pip install google-genai
+
+# Pour get_credentials.py (récupération automatique du token)
+pip install playwright
+playwright install chromium
 ```
 
 ---
@@ -46,6 +50,16 @@ TOKEN          = "750fd54ac2..."
 ```
 
 ### Trouver EVENT_ID et TOKEN
+
+**Option rapide — `get_credentials.py`** (recommandé) :
+
+```bash
+python get_credentials.py
+```
+
+Entrez l'event code et vos identifiants AMU. Le script récupère `EVENT_ID` et `TOKEN` automatiquement via SSO.
+
+**Option manuelle :**
 
 **EVENT_ID** — DevTools → Network → requête `ABCDEF?isParticipant=true` → Response → champ `_id`
 
