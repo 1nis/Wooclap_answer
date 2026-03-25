@@ -1,6 +1,10 @@
+import re
 import requests
 import getpass
+from pathlib import Path
 from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
+
+SCRIPT_DIR = Path(__file__).parent
 
 BASE_URL = "https://app.wooclap.com"
 
@@ -70,6 +74,40 @@ def get_token_via_sso(username, password):
 
 
 # ─────────────────────────────────────────────
+# INJECTION dans les scripts
+# ─────────────────────────────────────────────
+def patch_var(content, var_name, new_value):
+    """Remplace la valeur d'une variable Python dans un fichier."""
+    return re.sub(
+        rf'({var_name}\s*=\s*)"[^"]*"',
+        rf'\1"{new_value}"',
+        content
+    )
+
+
+def inject_credentials(event_code, event_id, token):
+    targets = {
+        "quizz_wooclap.py": ["EVENT_CODE", "EVENT_ID", "TOKEN"],
+        "wooclap_bot.py":   ["EVENT_CODE", "TOKEN"],
+    }
+
+    for filename, vars_to_patch in targets.items():
+        path = SCRIPT_DIR / filename
+        if not path.exists():
+            print(f"  ⚠️  {filename} introuvable — ignoré")
+            continue
+
+        content = path.read_text(encoding="utf-8")
+        values  = {"EVENT_CODE": event_code, "EVENT_ID": event_id, "TOKEN": token}
+
+        for var in vars_to_patch:
+            content = patch_var(content, var, values[var])
+
+        path.write_text(content, encoding="utf-8")
+        print(f"  ✅ {filename} mis à jour")
+
+
+# ─────────────────────────────────────────────
 # MAIN
 # ─────────────────────────────────────────────
 def main():
@@ -95,12 +133,15 @@ def main():
         return
     print("  ✅ TOKEN récupéré")
 
-    # Résultat
+    # Injection dans les scripts
+    print(f"\n📝 Mise à jour des scripts...")
+    inject_credentials(event_code, event_id, token)
+
     print(f"\n{'='*52}")
-    print("✅ Copiez ces valeurs dans vos scripts :\n")
-    print(f'EVENT_CODE = "{event_code}"')
-    print(f'EVENT_ID   = "{event_id}"')
-    print(f'TOKEN      = "{token}"')
+    print("✅ Scripts mis à jour :\n")
+    print(f'  EVENT_CODE = "{event_code}"')
+    print(f'  EVENT_ID   = "{event_id}"')
+    print(f'  TOKEN      = "{token[:20]}..."')
     print(f"{'='*52}")
 
 
