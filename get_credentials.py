@@ -49,7 +49,7 @@ def get_token_via_sso(username, password, event_code):
 
             # 3. Attendre le retour sur Wooclap après redirection SSO
             print("  ⏳ Attente de la redirection SSO...")
-            page.wait_for_url("*app.wooclap.com*", timeout=30000)
+            page.wait_for_url("*app.wooclap.com/auth/profile*", timeout=30000)
             page.wait_for_load_state("networkidle")
 
             # 4. Naviguer vers l'event pour s'assurer que le token est correct
